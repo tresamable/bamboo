@@ -1,0 +1,126 @@
+<project name="selenium" xmlns:unless="ant:unless">
+
+	<!-- note that some environment variables are overriden by Bamboo. Therefore, for actual configuration, please check Bamboo configuration -->
+
+	<property name="junit.showOutput" value="true"/>
+	<property name="workspace.dir" location="."/>
+	<property name="target.dir" value="target"/>
+	<property name="target.test.dir" value="target-test"/>
+	<property name="test.output.dir" value="${target.dir}/testoutput"/>
+	<!--import file="./bamboo-common.xml"/-->
+
+	<property name="java.src.dir" value="src/test/java"/>
+	<property name="resources.dir" value="src/test/resources"/>
+	<property name="selenium.src.dir" value="${java.src.dir}/com/selesolofn/selenium"/>
+	<property name="selenium.class.dir" value="${target.dir}/classes"/>
+	<property name="selenium.lib" value="${workspace.dir}/lib"/>
+	<property name="selenium.log4j.config" value="${workspace.dir}/src/test/resources/log4j.properties"/>
+	<property name="selenium.pkg" value="**"/>
+	<property name="selenium.env" value=""/>
+	<property name="selenium.browser" value=""/>
+	
+	<property name="testng.configuration" value=""/>
+	
+	<!-- Web Driver properties -->
+	<property name="selenium.browser" value=""/>
+	
+	<property name="selenium.driver.config.build" value=""/>
+	<property name="selenium.driver.config.deviceOrientation" value="" />
+	<property name="selenium.driver.config.deviceName" value="" />
+	<property name="selenium.driver.config.name" value=""/>
+	<property name="selenium.driver.config.platform" value="" />
+	<property name="selenium.driver.config.platformName" value="" />
+	<property name="selenium.driver.config.platformVersion" value="" />
+	<property name="selenium.driver.config.record_video" value="" />
+	<property name="selenium.driver.config.screenResolution" value="" />
+	<property name="selenium.driver.config.version" value=""/>
+	
+	<property name="selenium.selesolo.password.trade" value=""/>
+	<property name="selenium.selesolo.password.mentor" value=""/>
+
+	<path id="selenium.classpath">
+		<fileset dir="${selenium.lib}">
+			<include name="**/log4j-1.2.14.jar" />
+			<include name="**/selenium-server-standalone-3.14.0.jar" />
+			<include name="**/junit-4.7.jar" />
+			<include name="**/testng-6.8.5.jar" />
+		</fileset>
+		<pathelement location="${selenium.src.dir}"/>
+		<pathelement location="${selenium.class.dir}"/>
+	</path>
+
+	<!-- Clean only Selenium tests -->
+	<target name="selenium-clean" description="Clean Selenium tests">
+		<delete dir="${selenium.class.dir}" quiet="true"/>
+		<delete dir="${test.output.dir}" quiet="true"/>
+	</target>
+
+	<!-- Compile only Selenium tests -->
+	<target name="selenium-compile" description="Compile Selenium tests">
+		<mkdir dir="${selenium.class.dir}"/>
+		<javac srcdir="${selenium.src.dir}" destdir="${selenium.class.dir}" includeantruntime="false" debug="on">
+			<classpath refid="selenium.classpath"/>
+		</javac>
+	</target>
+
+	<taskdef name="testng" classname="org.testng.TestNGAntTask" classpathref="selenium.classpath" />
+	
+	<!-- Execute only Selenium tests -->
+	<target name="test-selenium" depends="selenium-clean, selenium-compile" description="Run Selenium tests">
+		<echo message="testng-user.name: ${user.name}" />
+		<echo message="selenium.pkg: ${selenium.pkg}" />
+		<echo message="selenium.env: ${selenium.env}" />
+		<echo message="testng.ph: src/test/java/com/selesolofn/selenium/${testng.path}" />
+		<mkdir dir="${test.output.dir}"/>
+		
+		<testng outputdir="${test.output.dir}" classpathref="selenium.classpath" useDefaultListeners="true">
+			<classpath refid="selenium.classpath"/>
+			<xmlfileset dir="${selenium.src.dir}" includes="${testng.path}.xml"  />
+			<jvmarg value="-Alog4j.configuration=file:${selenium.log4j.config}"/>
+			<jvmarg value="-Aselenium.env=${selenium.env}"/>
+			<jvmarg value="-Aselenium.browser=${selenium.browser}"/>
+			<!--  <formatter type="xml"/>    	
+			<batchtest todir="${test.output.dir}">
+				<fileset dir="${java.src.dir}">
+				<include name="**/selenium/${selenium.pkg}/*Test*.java"/>
+				</fileset>
+			</batchtest>
+			-->
+		</testng>
+	</target>
+
+	<target name="test-selenium2" depends="selenium-clean, selenium-compile" description="Run Selenium tests with XML configuration">
+		<echo message="testng-user.name: ${user.name}" />
+		<echo message="testng-configuration: ${testng.configuration}" />
+		
+		<mkdir dir="${test.output.dir}" />
+		
+		<testng outputdir="${test.output.dir}" classpathref="selenium.classpath" useDefaultListeners="true">
+			<classpath refid="selenium.classpath" />
+			<xmlfileset dir="${resources.dir}" includes="${testng.configuration}.xml" />
+			
+			<jvmarg value="-Alog4j.configuration=file:${selenium.log4j.config}" />
+			<jvmarg unless:blank="${selenium.env}" value="-Aselenium.env=${selenium.env}"/>
+			<jvmarg unless:blank="${selenium.browser}" value="-Aselenium.browser=${selenium.browser}" />
+			
+			<!-- Selenium driver properties -->
+			<jvmarg unless:blank="${selenium.driver.config.build}" value="-Abuild=${selenium.driver.config.build}" />
+			<jvmarg unless:blank="${selenium.driver.config.deviceOrientation}" value="-AdeviceOrientation=${selenium.driver.config.deviceOrientation}" />
+			<jvmarg unless:blank="${selenium.driver.config.deviceName}" value="-AdeviceName=${selenium.driver.config.deviceName}" />
+			<jvmarg unless:blank="${selenium.driver.config.name}" value="-Aname=${selenium.driver.config.name}" />
+			<jvmarg unless:blank="${selenium.driver.config.platform}" value="-Aplatform=${selenium.driver.config.platform}" />
+			<jvmarg unless:blank="${selenium.driver.config.platformName}" value="-AplatformName=${selenium.driver.config.platformName}" />
+			<jvmarg unless:blank="${selenium.driver.config.platformVersion}" value="-AplatformVersion=${selenium.driver.config.platformVersion}" />
+			<jvmarg unless:blank="${selenium.driver.config.record_video}" value="-Arecord_video=${selenium.driver.config.record_video}" />
+			<jvmarg unless:blank="${selenium.driver.config.screenResolution}" value="-AscreenResolution=${selenium.driver.config.screenResolution}" />
+			<jvmarg unless:blank="${selenium.driver.config.version}" value="-Aversion=${selenium.driver.config.version}" />
+			
+			<!-- Selesolo properties -->
+			<jvmarg unless:blank="${selenium.selesolo.password.trade}" value="-Aselenium.selesolo.password.trade=${selenium.selesolo.password.trade}"/>
+			<jvmarg unless:blank="${selenium.selesolo.password.mentor}" value="-Aselenium.selesolo.password.mentor=${selenium.selesolo.password.mentor}"/>
+		</testng>
+	</target>
+
+</project>
+
+
